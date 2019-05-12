@@ -16,16 +16,17 @@ from v2ray import V2ray
 
 
 def decode(base64Str):
+    base64Str = base64Str.replace('\n', '')
     padding = int(len(base64Str) % 4)
     if padding != 0:
         base64Str += '=' * (4 - padding)
     return str(base64.urlsafe_b64decode(base64Str), encoding = 'utf-8')
 
 
-# 鉴权
-if os.geteuid() != 0:
-    print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
-    exit()
+# # 鉴权
+# if os.geteuid() != 0:
+#     print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
+#     exit()
 
 # 本脚本的配置文件，目前的作用是仅存储用户输入的订阅地址，这样用户再次启动脚本时，就无需再输入订阅地址。
 # 预设的存储的路径为存储到用户的 HOME 内。
@@ -52,18 +53,20 @@ print("\n开始从订阅地址中读取服务器节点… 如等待时间过久�
 
 # 获取订阅信息
 urldata = requests.get(subLink).text
-serverListLink = str(base64.b64decode(urldata), encoding = 'utf-8').splitlines(False)
+serverListLink = decode(urldata).splitlines(False)
 for i in range(len(serverListLink)):
     if serverListLink[i].startswith('ss://'):
       # ss node
       base64Str = serverListLink[i].replace('ss://', '')
-      origin = decode(base64Str[0, base64Str.index('#')])
-      remark = urllib.parse.unquote(base64Str[base64Str.index('#') + 1]).decode('utf8')
-      security = origin[0, origin.index(':')]
-      password = origin[origin.index(':') + 1, origin.index('@')]
-      ipandport = origin[origin.index('@') + 1]
-      ip = ipandport[0, origin.index(':')]
-      port = int(origin.index(':') + 1)
+      base64Str = urllib.parse.unquote(base64Str)
+      origin = decode(base64Str[0 : base64Str.index('#')])
+      remark = base64Str[base64Str.index('#') + 1 :]
+      security = origin[0 : origin.index(':')]
+      password = origin[origin.index(':') + 1 : origin.index('@')]
+      ipandport = origin[origin.index('@') + 1 : ]
+      ip = ipandport[0: ipandport.index(':')]
+      port = int(ipandport[ipandport.index(':') + 1:])
+      print('【' + str(i) + '】' + remark)
       ssNode = Shadowsocks(ip, port, remark, security, password)
       serverListLink[i] = ssNode
     else:
@@ -72,16 +75,15 @@ for i in range(len(serverListLink)):
         jsonstr = decode(base64Str)
         serverNode = json.loads(jsonstr)
         print('【' + str(i) + '】' + serverNode['ps'])
-        v2Node = V2ray(serverNode['add'], serverNode['port'], int(serverNode['port']), serverNode['ps'], 'auto',
-                       serverNode['id'], int(serverNode['aid']), serverNode['net'], serverNode['type'], serverNode['host'], serverNode['path'], serverNode['tls'])
+        v2Node = V2ray(serverNode['add'], int(serverNode['port']), serverNode['ps'], 'auto', serverNode['id'], int(serverNode['aid']), serverNode['net'], serverNode['type'], serverNode['host'], serverNode['path'], serverNode['tls'])
         serverListLink[i] = v2Node
 
 while True:
     setServerNodeId = int(input("\n请输入要切换的节点编号："))
     subprocess.call('ping ' + serverListLink[setServerNodeId].remark + ' -c 3 -w 10', shell = True)
-    if re.search('[yesYES]', input('确定要使用该节点吗？[y/N] ')):
+    if input('确定要使用该节点吗？[y/N] ') != 'y':
         break
-    json.dump(serverListLink[setServerNodeId].formatConfig, open('/etc/v2ray/config.json', 'w'), indent=2)
+    json.dump(serverListLink[setServerNodeId].formatConfig(), open('/etc/v2ray/config.json', 'w'), indent=2)
     print("\n重启 v2ray 服务……\n")
     subprocess.call('systemctl restart v2ray.service', shell=True)
     print('地址切换完成')

@@ -9,7 +9,7 @@ class Shadowsocks(Node):
      password = ''
 
      def __init__(self, ip, port, remark, security, password):
-        Node(ip, port, remark, security)
+        super(Shadowsocks, self).__init__(ip, port, remark, security)
         self.password = password
 
      def formatConfig(self) :

@@ -14,7 +14,7 @@ class V2ray(Node):
     camouflageTls = ''
 
     def __init__(self, ip, port, remark, security, uuid, alterId, network, camouflageType, camouflageHost, camouflagePath, camouflageTls):
-        Node(ip, port, remark, security)
+        super(V2ray, self).__init__(ip, port, remark, security)
         self.uuid = uuid
         self.alterId = alterId
         self.network = network
