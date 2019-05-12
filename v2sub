@@ -7,7 +7,6 @@ import urllib
 import base64
 import json
 import subprocess
-import re
 
 import requests
 
@@ -20,17 +19,17 @@ def decode(base64Str):
     padding = int(len(base64Str) % 4)
     if padding != 0:
         base64Str += '=' * (4 - padding)
-    return str(base64.urlsafe_b64decode(base64Str), encoding = 'utf-8')
+    return str(base64.urlsafe_b64decode(base64Str), encoding='utf-8')
 
-
-# # 鉴权
-# if os.geteuid() != 0:
-#     print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
-#     exit()
+v2rayConfigLocal='/etc/v2ray/config.json'
+# 鉴权
+if os.geteuid() != 0:
+    print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
+    exit()
 
 # 本脚本的配置文件，目前的作用是仅存储用户输入的订阅地址，这样用户再次启动脚本时，就无需再输入订阅地址。
 # 预设的存储的路径为存储到用户的 HOME 内。
-subFilePath = 'D:\\v2sub.conf'
+subFilePath = os.path.expandvars('$HOME') + '/.v2sub.conf'
 # 获取订阅地址
 if not os.path.exists(subFilePath):
     open(subFilePath, 'w+')
@@ -80,14 +79,19 @@ for i in range(len(serverListLink)):
 
 while True:
     setServerNodeId = int(input("\n请输入要切换的节点编号："))
-    subprocess.call('ping ' + serverListLink[setServerNodeId].remark + ' -c 3 -w 10', shell = True)
-    if input('确定要使用该节点吗？[y/N] ') != 'y':
+    subprocess.call('ping ' + serverListLink[setServerNodeId].remark + ' -c 3 -w 10', shell=True)
+    inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
+    if inputStr == 'y':
+        json.dump(serverListLink[setServerNodeId].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
+        print("\n重启 v2ray 服务……\n")
+        subprocess.call('systemctl restart v2ray.service', shell=True)
+        print('地址切换完成')
+        exit()
+    elif inputStr == 'n':
+        continue
+    else:
         break
-    json.dump(serverListLink[setServerNodeId].formatConfig(), open('/etc/v2ray/config.json', 'w'), indent=2)
-    print("\n重启 v2ray 服务……\n")
-    subprocess.call('systemctl restart v2ray.service', shell=True)
-    print('地址切换完成')
-    exit()
+
 
 
 
