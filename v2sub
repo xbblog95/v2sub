@@ -19,7 +19,7 @@ def decode(base64Str):
     padding = int(len(base64Str) % 4)
     if padding != 0:
         base64Str += '=' * (4 - padding)
-    return str(base64.urlsafe_b64decode(base64Str), 'utf-8')
+    return str(base64.b64decode(base64Str),  'utf-8')
 
 v2rayConfigLocal='/etc/v2ray/config.json'
 # 鉴权
