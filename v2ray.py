@@ -58,7 +58,7 @@ class V2ray(Node):
                 "routing": {
                     "strategy": "rules",
                     "settings": {
-                        "domainStrategy": "IPOnDemand",
+                        "domainStrategy": "AsIs",
                         "rules": [{
                             "type": "field",
                             "ip": [
@@ -133,7 +133,7 @@ class V2ray(Node):
                 "routing": {
                     "strategy": "rules",
                     "settings": {
-                        "domainStrategy": "IPOnDemand",
+                        "domainStrategy": "AsIs",
                         "rules": [{
                             "type": "field",
                             "ip": [
@@ -206,7 +206,7 @@ class V2ray(Node):
                 "routing": {
                     "strategy": "rules",
                     "settings": {
-                        "domainStrategy": "IPOnDemand",
+                        "domainStrategy": "AsIs",
                         "rules": [{
                             "type": "field",
                             "ip": [
@@ -279,7 +279,7 @@ class V2ray(Node):
                 "routing": {
                     "strategy": "rules",
                     "settings": {
-                        "domainStrategy": "IPOnDemand",
+                        "domainStrategy": "AsIs",
                         "rules": [{
                             "type": "field",
                             "ip": [
