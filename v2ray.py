@@ -24,7 +24,6 @@ class V2ray(Node):
         self.camouflageType = camouflageType
 
     def formatConfig(self):
-        v2rayConf = ''
         if self.network == 'tcp' or self.network == 'auto':
             # tcp下
             v2rayConf = {
@@ -84,6 +83,7 @@ class V2ray(Node):
                     }
                 }
             }
+            return v2rayConf
         elif self.network == 'kcp':
             # kcp 下
             v2rayConf = {
@@ -158,6 +158,7 @@ class V2ray(Node):
                     }
                 }
             }
+            return v2rayConf
         elif self.network == 'ws':
             # ws
             v2rayConf = {
@@ -230,6 +231,7 @@ class V2ray(Node):
                     }
                 }
             }
+            return v2rayConf
         else:
             # h2
             v2rayConf = {
@@ -303,3 +305,4 @@ class V2ray(Node):
                 }
             }
             return v2rayConf
+
