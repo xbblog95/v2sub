@@ -19,7 +19,7 @@ def decode(base64Str):
     padding = int(len(base64Str) % 4)
     if padding != 0:
         base64Str += '=' * (4 - padding)
-    return str(base64.urlsafe_b64decode(base64Str), encoding='utf-8')
+    return str(base64.urlsafe_b64decode(base64Str), 'utf-8')
 
 v2rayConfigLocal='/etc/v2ray/config.json'
 # 鉴权
@@ -79,7 +79,7 @@ for i in range(len(serverListLink)):
 
 while True:
     setServerNodeId = int(input("\n请输入要切换的节点编号："))
-    subprocess.call('ping ' + serverListLink[setServerNodeId].remark + ' -c 3 -w 10', shell=True)
+    subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
     inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
     if inputStr == 'y':
         json.dump(serverListLink[setServerNodeId].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
