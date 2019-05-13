@@ -104,6 +104,7 @@ else:
     subprocess.call('cp ' + v2rayConfigLocal + ' ' + v2rayConfigLocal + '.bak', shell=True)
     for i in range(len(serverListLink)):
         json.dump(serverListLink[i].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
+        subprocess.call('systemctl restart v2ray.service', shell=True)
         try:
             output = subprocess.check_output('curl -o /dev/null -s -w %{speed_download} -x socks5://127.0.0.1:1080 ' + testFileUrl, shell=True)
         except KeyboardInterrupt:
@@ -113,6 +114,7 @@ else:
         print('%s : %d kb/s' %( serverListLink[i].remark, float(output) / 1000))
     print("\n正在恢复现有配置文件 %s\n" % v2rayConfigLocal)
     subprocess.call('mv ' + v2rayConfigLocal + '.bak ' + v2rayConfigLocal , shell=True)
+    subprocess.call('systemctl restart v2ray.service', shell=True)
 
 
 
