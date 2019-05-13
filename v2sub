@@ -17,7 +17,7 @@ from v2ray import V2ray
 
 
 def decode(base64Str):
-    base64Str = base64Str.replace('\n', '')
+    base64Str = base64Str.replace('\n', '').replace('-', '+').replace('_', '/')
     padding = int(len(base64Str) % 4)
     if padding != 0:
         base64Str += '=' * (4 - padding)
