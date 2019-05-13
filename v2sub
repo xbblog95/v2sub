@@ -106,8 +106,8 @@ else:
     for i in range(len(serverListLink)):
         json.dump(serverListLink[i].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
         subprocess.call('systemctl restart v2ray.service', shell=True)
-        time.sleep(5)
         try:
+            time.sleep(5)
             output = subprocess.check_output('curl -o /dev/null -s -w %{speed_download} -x socks5://127.0.0.1:1080 ' + testFileUrl, shell=True)
         except KeyboardInterrupt:
             break
