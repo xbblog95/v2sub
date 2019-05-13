@@ -113,7 +113,7 @@ else:
             break
         except BaseException:
             output = b'0.000'
-        print('%s : %d kb/s' %( serverListLink[i].remark, float(output) / 1000))
+        print('【%d】%s : %d kb/s' %(i, serverListLink[i].remark, float(output) / 1000))
     print("\n正在恢复现有配置文件 %s\n" % v2rayConfigLocal)
     subprocess.call('mv ' + v2rayConfigLocal + '.bak ' + v2rayConfigLocal , shell=True)
     subprocess.call('systemctl restart v2ray.service', shell=True)
