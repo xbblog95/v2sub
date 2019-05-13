@@ -12,6 +12,7 @@ chmod 777 v2sub;
 ``````
 
 截图
+
 ![avatar](https://i.loli.net/2019/05/13/5cd8d8df5020330894.png)
 
 ![avatar](https://i.loli.net/2019/05/13/5cd9071919ba651195.png)
@@ -25,7 +26,9 @@ chmod 777 v2sub;
 ``````
 
 测速模式会轮训订阅中所有节点 （单线程 curl cachefly的测速文件,如需测速更加精确，清将脚本中的testFileUrl后面的数字改成100mb或者更大，同时测速也将更慢，也更耗流量）
+
 测速模式截图
+
 ![avatar](https://i.loli.net/2019/05/13/5cd9550ca95ef63725.png)
 
 前面的数字就是序号，重新执行
