@@ -46,7 +46,10 @@ subFile.close()
 
 if not subLink:
     print('您还没有输入订阅地址，请输入订阅地址。')
-    subLink = input('订阅地址：')
+    try:
+        subLink = input('订阅地址：')
+    except KeyboardInterrupt:
+        exit()
     subFile = open(subFilePath, 'w+')
     subFile.write(subLink)
     subFile.close()
@@ -85,7 +88,10 @@ for i in range(len(serverListLink)):
 
 if mode == 'changeNode':
     while True:
-        setServerNodeId = int(input("\n请输入要切换的节点编号："))
+        try:
+            setServerNodeId = int(input("\n请输入要切换的节点编号："))
+        except BaseException:
+            continue
         subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
         inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
         if inputStr == 'y':
