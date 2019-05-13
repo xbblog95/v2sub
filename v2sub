@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import os
+import sys
 import urllib
 
 import base64
@@ -20,8 +21,12 @@ def decode(base64Str):
     if padding != 0:
         base64Str += '=' * (4 - padding)
     return str(base64.b64decode(base64Str),  'utf-8')
-
+mode = 'changeNode'
 v2rayConfigLocal='/etc/v2ray/config.json'
+testFileUrl="http://cachefly.cachefly.net/10mb.test"
+if len(sys.argv) == 2:
+    mode = sys.argv[1]
+
 # 鉴权
 if os.geteuid() != 0:
     print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
@@ -77,21 +82,37 @@ for i in range(len(serverListLink)):
         v2Node = V2ray(serverNode['add'], int(serverNode['port']), serverNode['ps'], 'auto', serverNode['id'], int(serverNode['aid']), serverNode['net'], serverNode['type'], serverNode['host'], serverNode['path'], serverNode['tls'])
         serverListLink[i] = v2Node
 
-while True:
-    setServerNodeId = int(input("\n请输入要切换的节点编号："))
-    subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
-    inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
-    if inputStr == 'y':
-        json.dump(serverListLink[setServerNodeId].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
-        print("\n重启 v2ray 服务……\n")
-        subprocess.call('systemctl restart v2ray.service', shell=True)
-        print('地址切换完成')
-        exit()
-    elif inputStr == 'n':
-        continue
-    else:
-        break
-
+if mode == 'changeNode':
+    while True:
+        setServerNodeId = int(input("\n请输入要切换的节点编号："))
+        subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
+        inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
+        if inputStr == 'y':
+            json.dump(serverListLink[setServerNodeId].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
+            print("\n重启 v2ray 服务……\n")
+            subprocess.call('systemctl restart v2ray.service', shell=True)
+            print('地址切换完成')
+            exit()
+        elif inputStr == 'n':
+            continue
+        else:
+            break
+else:
+    # copy config.json
+    print("\n当前模式为测速模式\n")
+    print("\n正在备份现有配置文件 %s\n" % v2rayConfigLocal)
+    subprocess.call('cp ' + v2rayConfigLocal + ' ' + v2rayConfigLocal + '.bak', shell=True)
+    for i in range(len(serverListLink)):
+        json.dump(serverListLink[i].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
+        try:
+            output = subprocess.check_output('curl -o /dev/null -s -w %{speed_download} -x socks5://127.0.0.1:1080 ' + testFileUrl, shell=True)
+        except KeyboardInterrupt:
+            break
+        except BaseException:
+            output = b'0.000'
+        print('%s : %d kb/s' %( serverListLink[i].remark, float(output) / 1000))
+    print("\n正在恢复现有配置文件 %s\n" % v2rayConfigLocal)
+    subprocess.call('mv ' + v2rayConfigLocal + '.bak ' + v2rayConfigLocal , shell=True)
 
 
 
