@@ -90,6 +90,8 @@ if mode == 'changeNode':
     while True:
         try:
             setServerNodeId = int(input("\n请输入要切换的节点编号："))
+        except KeyboardInterrupt:
+            break
         except BaseException:
             continue
         subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
