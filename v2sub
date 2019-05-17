@@ -91,13 +91,25 @@ if mode == 'changeNode':
         try:
             setServerNodeId = int(input("\n请输入要切换的节点编号："))
         except KeyboardInterrupt:
-            break
+            break383
         except BaseException:
             continue
         subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
         inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
         if inputStr == 'y':
-            json.dump(serverListLink[setServerNodeId].formatConfig(), open(v2rayConfigLocal, 'w'), indent=2)
+            # isredirect = ''
+            # try:
+            #     isredirect = input('确定要使用透明代理吗？[y/n/exit]')
+            # except KeyboardInterrupt:
+            #     break
+            # except BaseException:
+            #     continue
+            jsonObj = serverListLink[setServerNodeId].formatConfig()
+            # if isredirect == 'n':
+            #     continue
+            # elif isredirect == 'y':
+            #     jsonObj
+            json.dump(jsonObj, open(v2rayConfigLocal, 'w'), indent=2)
             print("\n重启 v2ray 服务……\n")
             subprocess.call('systemctl restart v2ray.service', shell=True)
             print('地址切换完成')
