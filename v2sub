@@ -22,6 +22,75 @@ def decode(base64Str):
     if padding != 0:
         base64Str += '=' * (4 - padding)
     return str(base64.b64decode(base64Str),  'utf-8')
+def askfollowRedirect(json):
+    isfollowRedirect = ''
+    try:
+        isfollowRedirect = input('是否使用透明代理？[y/n/exit]')
+    except KeyboardInterrupt:
+        exit()
+    except BaseException:
+        return json
+    if isfollowRedirect == 'y':
+        # 判断是否开启了ip转发
+        ipforward = subprocess.check_output("cat /proc/sys/net/ipv4/ip_forward",  shell=True)
+        if ipforward == b'0\n':
+            #添加ip转发
+            subprocess.call("sysctl -w net.ipv4.ip_forward=1",  shell=True)
+            subprocess.call("sysctl -p /etc/sysctl.conf", shell=True)
+        ## 修改json的相关参数
+        json['inbounds'].append({
+           "port": 12345,
+           "protocol": "dokodemo-door",
+           "settings": {
+             "network": "tcp,udp",
+             "followRedirect": True
+           },
+            "tag":"followRedirect",
+           "sniffing": {
+             "enabled": True,
+             "destOverride": ["http", "tls"]
+           }
+        })
+        json['routing']['settings']['rules'].append({
+            "type": "field",
+            "inboundTag": ["followRedirect"],
+            "outboundTag": "out"
+        })
+        for outbound in json['outbounds']:
+            if outbound["protocol"] == 'vmess' or outbound["protocol"] == 'shadowsocks':
+                outbound['streamSettings']['sockopt'] = {
+                    "mark": 255
+                }
+        #开启iptable转发
+        subprocess.call("iptables -t nat -N V2RAY", shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -d 192.168.0.0/16 -j RETURN", shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -d 172.16.0.0/16 -j RETURN", shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -d 10.0.0.0/16 -j RETURN", shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -p tcp -j RETURN -m mark --mark 0xff", shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -p udp -j RETURN -m mark --mark 0xff", shell=True)
+        try:
+            subprocess.call("iptables -t nat -A V2RAY -p tcp -j REDIRECT --to-ports 12345", shell=True)
+        except BaseException:
+            print('以存在相应规则!跳过!')
+        subprocess.call("iptables -t nat -A OUTPUT -p tcp -j V2RAY", shell=True)
+        return json
+    elif isfollowRedirect == 'n':
+        ipforward = subprocess.check_output("cat /proc/sys/net/ipv4/ip_forward",  shell=True)
+        if ipforward == b'1\n':
+            # 添加ip转发
+            subprocess.call("sysctl -w net.ipv4.ip_forward=0", shell=True)
+            subprocess.call("sysctl -p /etc/sysctl.conf", shell=True)
+        subprocess.call("iptables -t nat -D V2RAY -p tcp -j REDIRECT --to-ports 12345", shell=True)
+        subprocess.call("iptables -t nat -D V2RAY -p udp -j REDIRECT --to-ports 12345", shell=True)
+        subprocess.call("iptables -t nat -F V2RAY", shell=True)
+
+        return json
+    else:
+        return askfollowRedirect(json)
+
+
+
+
 mode = 'changeNode'
 v2rayConfigLocal='/etc/v2ray/config.json'
 testFileUrl="http://cachefly.cachefly.net/10mb.test"
@@ -91,24 +160,15 @@ if mode == 'changeNode':
         try:
             setServerNodeId = int(input("\n请输入要切换的节点编号："))
         except KeyboardInterrupt:
-            break383
+            break
         except BaseException:
             continue
         subprocess.call('ping ' + serverListLink[setServerNodeId].ip + ' -c 3 -w 10', shell=True)
         inputStr = input('确定要使用该节点吗？[y/n/exit]  ')
         if inputStr == 'y':
-            # isredirect = ''
-            # try:
-            #     isredirect = input('确定要使用透明代理吗？[y/n/exit]')
-            # except KeyboardInterrupt:
-            #     break
-            # except BaseException:
-            #     continue
+
             jsonObj = serverListLink[setServerNodeId].formatConfig()
-            # if isredirect == 'n':
-            #     continue
-            # elif isredirect == 'y':
-            #     jsonObj
+            jsonObj = askfollowRedirect(jsonObj)
             json.dump(jsonObj, open(v2rayConfigLocal, 'w'), indent=2)
             print("\n重启 v2ray 服务……\n")
             subprocess.call('systemctl restart v2ray.service', shell=True)
@@ -137,8 +197,6 @@ else:
     print("\n正在恢复现有配置文件 %s\n" % v2rayConfigLocal)
     subprocess.call('mv ' + v2rayConfigLocal + '.bak ' + v2rayConfigLocal , shell=True)
     subprocess.call('systemctl restart v2ray.service', shell=True)
-
-
 
 
 

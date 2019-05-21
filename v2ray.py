@@ -91,6 +91,9 @@ class V2ray(Node):
                             ]
                         }]
                     },
+                    "streamSettings": {
+                        "network": "tcp"
+                    },
                     "tag": "out"
                 })
             return v2rayConf
