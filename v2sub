@@ -176,6 +176,9 @@ if mode == 'changeNode':
             print("\n重启 v2ray 服务……\n")
             subprocess.call('systemctl restart v2ray.service', shell=True)
             print('地址切换完成')
+            print('代理端口协议：socks5')
+            print('代理地址: 127.0.0.1')
+            print('代理端口号：1080')
             exit()
         elif inputStr == 'n':
             continue
