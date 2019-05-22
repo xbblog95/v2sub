@@ -25,7 +25,7 @@ def decode(base64Str):
 def askfollowRedirect(json):
     isfollowRedirect = ''
     try:
-        isfollowRedirect = input('是否使用透明代理？[y/n/exit]')
+        isfollowRedirect = input('是否使用透明代理（重启失效）？[y/n/exit]')
     except KeyboardInterrupt:
         exit()
     except BaseException:
@@ -61,18 +61,10 @@ def askfollowRedirect(json):
                 outbound['streamSettings']['sockopt'] = {
                     "mark": 255
                 }
+        #关闭之前的iptables转发
+        closeiptableRedirect()
         #开启iptable转发
-        subprocess.call("iptables -t nat -N V2RAY", shell=True)
-        subprocess.call("iptables -t nat -A V2RAY -d 192.168.0.0/16 -j RETURN", shell=True)
-        subprocess.call("iptables -t nat -A V2RAY -d 172.16.0.0/16 -j RETURN", shell=True)
-        subprocess.call("iptables -t nat -A V2RAY -d 10.0.0.0/16 -j RETURN", shell=True)
-        subprocess.call("iptables -t nat -A V2RAY -p tcp -j RETURN -m mark --mark 0xff", shell=True)
-        subprocess.call("iptables -t nat -A V2RAY -p udp -j RETURN -m mark --mark 0xff", shell=True)
-        try:
-            subprocess.call("iptables -t nat -A V2RAY -p tcp -j REDIRECT --to-ports 12345", shell=True)
-        except BaseException:
-            print('以存在相应规则!跳过!')
-        subprocess.call("iptables -t nat -A OUTPUT -p tcp -j V2RAY", shell=True)
+        openiptableRedirect()
         return json
     elif isfollowRedirect == 'n':
         ipforward = subprocess.check_output("cat /proc/sys/net/ipv4/ip_forward",  shell=True)
@@ -80,15 +72,26 @@ def askfollowRedirect(json):
             # 添加ip转发
             subprocess.call("sysctl -w net.ipv4.ip_forward=0", shell=True)
             subprocess.call("sysctl -p /etc/sysctl.conf", shell=True)
-        subprocess.call("iptables -t nat -D V2RAY -p tcp -j REDIRECT --to-ports 12345", shell=True)
-        subprocess.call("iptables -t nat -D V2RAY -p udp -j REDIRECT --to-ports 12345", shell=True)
-        subprocess.call("iptables -t nat -F V2RAY", shell=True)
-
+        closeiptableRedirect()
         return json
     else:
         return askfollowRedirect(json)
 
+def openiptableRedirect():
+    subprocess.call("iptables -t nat -N V2RAY", shell=True)
+    subprocess.call("iptables -t nat -A V2RAY -d 192.168.0.0/16 -j RETURN", shell=True)
+    subprocess.call("iptables -t nat -A V2RAY -d 172.16.0.0/16 -j RETURN", shell=True)
+    subprocess.call("iptables -t nat -A V2RAY -d 10.0.0.0/16 -j RETURN", shell=True)
+    subprocess.call("iptables -t nat -A V2RAY -p tcp -j RETURN -m mark --mark 0xff", shell=True)
+    subprocess.call("iptables -t nat -A V2RAY -p udp -j RETURN -m mark --mark 0xff", shell=True)
+    try:
+        subprocess.call("iptables -t nat -A V2RAY -p tcp --match multiport ! --dports 12345,1080,22 -j REDIRECT --to-ports 12345",shell=True)
+    except BaseException:
+        print('以存在相应规则!跳过!')
+    subprocess.call("iptables -t nat -A OUTPUT -p tcp -j V2RAY", shell=True)
 
+def closeiptableRedirect():
+    subprocess.call("iptables -t nat -F V2RAY", shell=True)
 
 
 mode = 'changeNode'
