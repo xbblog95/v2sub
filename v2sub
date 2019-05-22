@@ -70,28 +70,28 @@ def askfollowRedirect(json):
         ipforward = subprocess.check_output("cat /proc/sys/net/ipv4/ip_forward",  shell=True)
         if ipforward == b'1\n':
             # 添加ip转发
-            subprocess.call("sysctl -w net.ipv4.ip_forward=0", shell=True)
-            subprocess.call("sysctl -p /etc/sysctl.conf", shell=True)
+            subprocess.call("sysctl -w net.ipv4.ip_forward=0", shell=True, stdout = subprocess.DEVNULL)
+            subprocess.call("sysctl -p /etc/sysctl.conf", shell=True, stdout = subprocess.DEVNULL)
         closeiptableRedirect()
         return json
     else:
         return askfollowRedirect(json)
 
 def openiptableRedirect():
-    subprocess.call("iptables -t nat -N V2RAY", shell=True)
-    subprocess.call("iptables -t nat -A V2RAY -d 192.168.0.0/16 -j RETURN", shell=True)
-    subprocess.call("iptables -t nat -A V2RAY -d 172.16.0.0/16 -j RETURN", shell=True)
-    subprocess.call("iptables -t nat -A V2RAY -d 10.0.0.0/16 -j RETURN", shell=True)
-    subprocess.call("iptables -t nat -A V2RAY -p tcp -j RETURN -m mark --mark 0xff", shell=True)
-    subprocess.call("iptables -t nat -A V2RAY -p udp -j RETURN -m mark --mark 0xff", shell=True)
+    subprocess.call("iptables -t nat -N V2RAY", shell=True, stdout = subprocess.DEVNULL)
+    subprocess.call("iptables -t nat -A V2RAY -d 192.168.0.0/16 -j RETURN", shell=True, stdout = subprocess.DEVNULL)
+    subprocess.call("iptables -t nat -A V2RAY -d 172.16.0.0/16 -j RETURN", shell=True, stdout = subprocess.DEVNULL)
+    subprocess.call("iptables -t nat -A V2RAY -d 10.0.0.0/16 -j RETURN", shell=True, stdout = subprocess.DEVNULL)
+    subprocess.call("iptables -t nat -A V2RAY -p tcp -j RETURN -m mark --mark 0xff", shell=True, stdout = subprocess.DEVNULL)
+    subprocess.call("iptables -t nat -A V2RAY -p udp -j RETURN -m mark --mark 0xff", shell=True, stdout = subprocess.DEVNULL)
     try:
-        subprocess.call("iptables -t nat -A V2RAY -p tcp --match multiport ! --dports 12345,1080,22 -j REDIRECT --to-ports 12345",shell=True)
+        subprocess.call("iptables -t nat -A V2RAY -p tcp --match multiport ! --dports 12345,1080,22 -j REDIRECT --to-ports 12345",shell=True, stdout = subprocess.DEVNULL)
     except BaseException:
         print('以存在相应规则!跳过!')
-    subprocess.call("iptables -t nat -A OUTPUT -p tcp -j V2RAY", shell=True)
+    subprocess.call("iptables -t nat -A OUTPUT -p tcp -j V2RAY", shell=True, stdout = subprocess.DEVNULL)
 
 def closeiptableRedirect():
-    subprocess.call("iptables -t nat -F V2RAY", shell=True)
+    subprocess.call("iptables -t nat -F V2RAY", shell=True, stdout = subprocess.DEVNULL)
 
 
 mode = 'changeNode'
@@ -104,6 +104,17 @@ if len(sys.argv) == 2:
 if os.geteuid() != 0:
     print("您需要切换到 Root 身份才可以使用本脚本。尝试在命令前加上 sudo?\n")
     exit()
+
+#判断v2ray服务是否安装
+if subprocess.call("systemctl is-enabled v2ray.service", shell=True, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL) == 1:
+    print('检测到v2ray未安装,将执行官方脚本安装v2ray,如果下载速度缓慢,请考虑手动本地安装v2ray,参考地址：https://www.v2ray.com/chapter_00/install.html')
+    print('正在下载官方脚本')
+    subprocess.run("wget https://install.direct/go.sh", shell=True, stdout = subprocess.DEVNULL)
+    print('正在安装v2ray')
+    subprocess.check_call('bash go.sh', shell=True)
+    print('执行清理工作')
+    subprocess.run('rm -rf go.sh', shell=True)
+
 
 # 本脚本的配置文件，目前的作用是仅存储用户输入的订阅地址，这样用户再次启动脚本时，就无需再输入订阅地址。
 # 预设的存储的路径为存储到用户的 HOME 内。
